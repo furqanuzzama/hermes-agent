@@ -18,5 +18,21 @@ DISCORD_ALLOWED_USERS=${DISCORD_ALLOWED_USERS}
 EOF
 
 echo "All configured ✅"
+
+# Keep-alive server so Render's port scan passes
+python3 -c "
+import http.server, threading, os
+port = int(os.environ.get('PORT', 10000))
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b'Hermes Agent is running!')
+    def log_message(self, format, *args): pass
+server = http.server.HTTPServer(('0.0.0.0', port), Handler)
+threading.Thread(target=server.serve_forever, daemon=True).start()
+print(f'Keep-alive server started on port {port}')
+" &
+
 echo "Starting Discord gateway..."
 hermes gateway run
